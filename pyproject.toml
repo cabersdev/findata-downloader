@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=65.5.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "findata-downloader"
+version = "0.1.0"
+description = "Un tool CLI per fare qualcosa di utile"
+readme = "README.md"
+authors = [{ name = "Giovanni Caberlotto", email = "caberlotto.giovanni@email" }, {name = "Alberto Alessi"}]
+dependencies = [
+    "click>=8.0",
+]
+
+[project.scripts]
+findata-downloader = "findata-downloader.__main__:main"
