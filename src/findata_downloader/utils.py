@@ -1,67 +1,142 @@
-# src/findata_downloader/utils.py
-import yfinance as yf
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from datetime import datetime
+import os
 import logging
+from pathlib import Path
+from typing import Optional, Union
+from datetime import datetime
+
+import pandas as pd
+import yfinance as yf
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def load_config():
-    return {
-        'raw_dir': 'data/raw',
-        'processed_dir': 'data/processed',
-        'quantile_threshold': 0.99
-    }
-
-def fetch_stock_data(ticker: str, years: int = 5) -> pd.DataFrame | None:
+def fetch_stock_data(
+    ticker: str,
+    period: Optional[str] = None,
+    interval: str = '1d',
+    start: Optional[Union[datetime, str]] = None,
+    end: Optional[Union[datetime, str]] = None,
+    prepost: bool = False,
+    adjust: bool = True,
+    api_key: Optional[str] = None,
+    proxy: Optional[str] = None,
+    timeout: int = 30,
+    retries: int = 3,
+    verbose: bool = False
+) -> pd.DataFrame:
+    """
+    Scarica dati storici utilizzando Yahoo Finance
+    """
     try:
-        end_date = datetime.now()
-        start_date = end_date.replace(year=end_date.year - years)
-        logger.info(f"Scaricando dati per {ticker}...")
-        data = yf.download(
-            ticker,
-            start=start_date,
-            end=end_date,
-            progress=False,
-            auto_adjust=True
+        session = requests.Session()
+        if proxy:
+            session.proxies = {
+                "http": proxy,
+                "https": proxy
+            }
+            if verbose:
+                logger.info(f"Using proxy: {proxy}")
+
+        retry_strategy = Retry(
+            total=retries,
+            backoff_factor=0.3,
+            status_forcelist=[429, 500, 502, 503, 504]
         )
-        if data.empty:
-            logger.warning(f"Nessun dato trovato per {ticker}")
-            return None
-        return data.reset_index()[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']]
-    except Exception as e:
-        logger.error(f"Errore durante il download di {ticker}: {str(e)}")
-        return None
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
 
-def process_data(raw_df: pd.DataFrame, ticker: str) -> pd.DataFrame | None:
-    try:
-        df = raw_df.copy()
-        df['Date'] = pd.to_datetime(df['Date'])
-        df['log_returns'] = np.log(df['Close']).diff()
-        threshold = df['log_returns'].quantile(0.99)
-        filtered = df[df['log_returns'].abs() < threshold]
-        return filtered.dropna()
-    except Exception as e:
-        logger.error(f"Errore elaborazione {ticker}: {str(e)}")
-        return None
+        session.timeout = timeout
 
-def save_data(df: pd.DataFrame, path: Path, ticker: str, file_format: str):
-    try:
-        path.mkdir(parents=True, exist_ok=True)
-        if file_format == "csv":
-            output_path = path / f"{ticker}.csv"
-            df.to_csv(output_path, index=False)
-        elif file_format == "parquet":
-            output_path = path / f"{ticker}.parquet"
-            df.to_parquet(output_path, index=False)
+        yf_ticker = yf.Ticker(ticker, session=session)
+        
+        kwargs = {
+            "interval": interval,
+            "prepost": prepost,
+            "auto_adjust": adjust,
+        }
+
+        if period:
+            kwargs["period"] = period
         else:
-            logger.warning(f"Formato {file_format} non riconosciuto. Salvataggio in CSV di default.")
-            output_path = path / f"{ticker}.csv"
-            df.to_csv(output_path, index=False)
+            kwargs["start"] = start
+            kwargs["end"] = end
 
-        logger.info(f"Dati salvati in {output_path}")
+        if verbose:
+            logger.info(f"Downloading data with parameters: {kwargs}")
+
+        data = yf_ticker.history(**kwargs)
+        
+        if data.empty:
+            raise ValueError("No data returned for the given parameters")
+
+        return data
+
     except Exception as e:
-        logger.error(f"Errore salvataggio {ticker}: {str(e)}")
+        logger.error(f"Download failed: {str(e)}")
+        raise
+
+def save_data(
+    data: pd.DataFrame,
+    path: Union[str, Path],
+    file_format: str = 'csv',
+    compress: bool = False,
+    overwrite: bool = False
+) -> None:
+    """
+    Salva i dati in diversi formati con opzione di compressione
+    """
+    path = Path(path)
+    compression = None
+    
+    try:
+        if path.exists() and not overwrite:
+            raise FileExistsError(f"File {path} already exists")
+        
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        if file_format == 'csv':
+            compression = 'gzip' if compress else None
+            data.to_csv(path, index=True, compression=compression)
+        
+        elif file_format == 'json':
+            compression = 'gzip' if compress else None
+            data.to_json(path, indent=4, compression=compression)
+        
+        elif file_format == 'parquet':
+            compression = 'gzip' if compress else None
+            data.to_parquet(path, compression=compression)
+        
+        elif file_format == 'feather':
+            if compress:
+                raise NotImplementedError("Feather format doesn't support compression in this implementation")
+            data.reset_index().to_feather(path)
+        
+        elif file_format == 'xlsx':
+            if compress:
+                raise NotImplementedError("XLSX compression not supported. Use CSV/JSON/Parquet instead")
+            data.to_excel(path, index=True)
+        
+        else:
+            raise ValueError(f"Formato non supportato: {file_format}")
+
+        logger.info(f"Dati salvati correttamente in: {path}")
+
+    except Exception as e:
+        logger.error(f"Salvataggio fallito: {str(e)}")
+        raise
+
+def validate_ticker(ticker: str) -> bool:
+    """Verifica la validità del ticker"""
+    try:
+        yf.Ticker(ticker).info
+        return True
+    except:
+        return False
+
+def get_formats() -> list:
+    """Restituisce la lista dei formati supportati"""
+    return ['csv', 'json', 'parquet', 'feather', 'xlsx']

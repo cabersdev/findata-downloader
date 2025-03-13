@@ -1,16 +1,38 @@
 [build-system]
-requires = ["setuptools>=65.5.0", "wheel"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "findata-downloader"
 version = "0.1.0"
-description = "Un tool CLI per fare qualcosa di utile"
+description = "CLI tool for downloading financial data"
 readme = "README.md"
-authors = [{ name = "Giovanni Caberlotto", email = "caberlotto.giovanni@email" }, {name = "Alberto Alessi"}]
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Giovanni Caberlotto", email = "caberlotto.giovanni@gmail.com"},
+    {name = "Alberto Alessi"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
 dependencies = [
-    "click>=8.0",
+    "click",
+    "yfinance",
+    "pandas",
+    "requests",
+    "pyarrow",
+    "openpyxl"
 ]
 
 [project.scripts]
-findata-downloader = "findata-downloader.__main__:main"
+findata = "findata_downloader.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]  # Modifica cruciale: deve essere un array
+include = ["findata_downloader*"]
+exclude = []
+namespaces = false

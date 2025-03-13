@@ -1,1 +1,6 @@
-click>=8.0
+click
+yfinance
+pandas
+requests
+pyarrow
+openpyxl
