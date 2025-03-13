@@ -49,10 +49,6 @@ from .utils import fetch_stock_data, save_data
 @click.option('--proxy',
               type=str,
               help='Proxy server (e.g., http://user:pass@host:port)')
-@click.option('--threads', '-t',
-              type=int,
-              default=4,
-              help='Number of download threads')
 @click.option('--timeout',
               type=int,
               default=30,
@@ -76,7 +72,6 @@ def main(
     verbose: bool,
     api_key: Optional[str],
     proxy: Optional[str],
-    threads: int,
     timeout: int,
     retries: int
 ):
@@ -112,7 +107,6 @@ def main(
             adjust=adjust,
             api_key=api_key,
             proxy=proxy,
-            threads=threads,
             timeout=timeout,
             retries=retries,
             verbose=verbose
