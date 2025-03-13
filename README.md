@@ -6,9 +6,9 @@ A professional CLI tool for downloading financial market data.
 
 ```bash
 # Install from git
-pip install git+https://github.com/yourusername/findata-downloader.git
+pip install git+https://github.com/cabersdev/findata-downloader.git
 
 # Or clone and install locally
-git clone https://github.com/yourusername/findata-downloader
+git clone https://github.com/cabersdev/findata-downloader
 cd findata-downloader
 pip install .
