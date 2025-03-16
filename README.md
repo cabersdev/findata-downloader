@@ -17,12 +17,12 @@ pip install findata-downloader
 
 **2. Da repository Git:**
 ```bash
-pip install git+https://github.com/tuo-repo/findata-downloader.git
+pip install git+https://github.com/cabersdev/findata-downloader.git
 ```
 
 **3. Sviluppo locale:**
 ```bash
-git clone https://github.com/tuo-repo/findata-downloader
+git clone https://github.com/cabersdev/findata-downloader
 cd findata-downloader
 pip install -e .
 ```
