@@ -20,20 +20,17 @@ classifiers = [
 ]
 
 dependencies = [
-    "click~=8.1.7",
-    "yfinance~=0.2.38",
-    "pandas~=2.2.2",
-    "requests~=2.32.3",
-    "pyarrow>=10.0.1; python_version < '3.12'",
-    "pyarrow>=14.0.2; python_version >= '3.12'",
-    "openpyxl~=3.1.2"
+    "click>=8.1.7",
+    "yfinance>=0.2.38",
+    "pandas>=2.2.2",
+    "requests>=2.32.3",
+    "pyarrow>=16.0.0",
+    "openpyxl>=3.1.2"
 ]
 
 [project.scripts]
 findata = "findata_downloader.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]  # Modifica cruciale: deve essere un array
-include = ["findata_downloader*"]
-exclude = []
-namespaces = false
+[tool.setuptools]
+packages = ["findata_downloader"]
+package-dir = {"" = "src"}
