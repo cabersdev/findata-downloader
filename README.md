@@ -128,4 +128,3 @@ MIT License - [Dettagli Licenza](LICENSE)
 5. Apri una Pull Request
 
 **Happy data mining!** 🚀
-```
