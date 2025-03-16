@@ -1,6 +1,6 @@
-click
-yfinance
-pandas
-requests
-pyarrow
-openpyxl
+click~=8.1.7
+yfinance~=0.2.38
+pandas~=2.2.2
+requests~=2.32.3
+pyarrow~=16.0.0
+openpyxl~=3.1.2

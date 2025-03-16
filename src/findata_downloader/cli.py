@@ -2,7 +2,7 @@ import click
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
-from .utils import fetch_stock_data, save_data
+from .utils import fetch_stock_data, save_data, validate_ticker
 
 @click.command()
 @click.argument('ticker', type=str, required=True)
@@ -96,6 +96,9 @@ def main(
         if verbose:
             click.echo(f"Starting download for {ticker}...")
         
+        if not validate_ticker(ticker):
+            raise click.ClickException(f"Ticker {ticker} non valido o non trovato")
+
         # Download dati
         data = fetch_stock_data(
             ticker=ticker,
@@ -121,11 +124,13 @@ def main(
 
         if verbose:
             click.echo(f"Data successfully saved to {output_path}")
-            click.echo(f"File size: {output_path.stat().st_size / 1024:.2f} KB")
+            if output_path.exists():
+                click.echo(f"File size: {output_path.stat().st_size / 1024:.2f} KB")
+            else:
+                click.echo("File non creato correttamente")
 
     except Exception as e:
-        raise click.ClickException(f"Download error: {str(e)}")
-
-
+        raise click.ClickException(f"Errore: {str(e)}")
+    
 if __name__ == "__main__":
     main()
