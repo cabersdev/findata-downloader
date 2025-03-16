@@ -1,4 +1,3 @@
-```markdown
 # 📈 Findata Downloader
 
 Una potente CLI professionale per scaricare dati finanziari da Yahoo Finance
